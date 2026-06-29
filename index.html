@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match the Ad — GSB 601</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="header">
+    <h1>Match the Ad</h1>
+    <div id="player-count">Connecting…</div>
+  </div>
+
+  <div id="supabase-banner">
+    Multiplayer disabled — configure Supabase credentials in supabase-config.js
+  </div>
+
+  <div id="game">
+    <svg id="line-svg" xmlns="http://www.w3.org/2000/svg">
+      <line id="drag-line" style="display:none"/>
+    </svg>
+    <div id="col-cans"  class="column"></div>
+    <div id="col-clues" class="column"></div>
+  </div>
+
+  <div id="reveal-overlay">
+    <div id="reveal-box">
+      <h2>Answers Revealed</h2>
+      <div id="score-text"></div>
+      <p>Tap anywhere to close</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
