@@ -33,21 +33,21 @@ const CORRECT_PAIRS = {
 };
 
 const CANS = [
-  { id: 'budweiser',  label: 'Budweiser',  img: 'public/images/budweiser.jpg' },
-  { id: 'pepsi',      label: 'Pepsi',      img: 'public/images/pepsi.jpg' },
-  { id: 'gatorade',   label: 'Gatorade',   img: 'public/images/gatorade.jpg' },
-  { id: 'coca-cola',  label: 'Coca-Cola',  img: 'public/images/coca-cola.jpg' },
-  { id: 'diet-coke',  label: 'Diet Coke',  img: 'public/images/diet-coke.jpg' },
-  { id: 'inca-kola',  label: 'Inca Kola',  img: 'public/images/inca-kola.jpg' },
+  { id: 'budweiser',  label: 'Budweiser',  img: 'budweiser.jpg' },
+  { id: 'pepsi',      label: 'Pepsi',      img: 'pepsi.jpg' },
+  { id: 'gatorade',   label: 'Gatorade',   img: 'gatorade.jpg' },
+  { id: 'coca-cola',  label: 'Coca-Cola',  img: 'coca-cola.jpg' },
+  { id: 'diet-coke',  label: 'Diet Coke',  img: 'diet-coke.jpg' },
+  { id: 'inca-kola',  label: 'Inca Kola',  img: 'inca-kola.jpg' },
 ];
 
 const CLUES = [
-  { id: 'clydesdales',        label: 'Clydesdales',        img: 'public/images/clydesdales.jpg' },
-  { id: 'michael-jackson',    label: 'Michael Jackson',    img: 'public/images/michael-jackson.jpg' },
-  { id: 'bo-jackson',         label: 'Bo Jackson',         img: 'public/images/bojackson.jpg' },
-  { id: 'mean-joe-greene',    label: 'Mean Joe Greene',    img: 'public/images/mean-joe-greene.jpg' },
-  { id: 'construction-worker',label: 'Construction Worker',img: 'public/images/construction-worker.jpg' },
-  { id: 'machu-picchu',       label: 'Machu Picchu',       img: 'public/images/machu-picchu.jpg' },
+  { id: 'clydesdales',        label: 'Clydesdales',        img: 'clydesdales.jpg' },
+  { id: 'michael-jackson',    label: 'Michael Jackson',    img: 'michael-jackson.jpg' },
+  { id: 'bo-jackson',         label: 'Bo Jackson',         img: 'bojackson.jpg' },
+  { id: 'mean-joe-greene',    label: 'Mean Joe Greene',    img: 'mean-joe-greene.jpg' },
+  { id: 'construction-worker',label: 'Construction Worker',img: 'construction-worker.jpg' },
+  { id: 'machu-picchu',       label: 'Machu Picchu',       img: 'machu-picchu.jpg' },
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
