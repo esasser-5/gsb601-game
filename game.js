@@ -19,17 +19,16 @@ const CANS = [
 const CLUES = [
   { id: 'clydesdales',         label: 'Clydesdales',         img: 'clydesdales.jpg' },
   { id: 'michael-jackson',     label: 'Michael Jackson',     img: 'michael-jackson.jpg' },
-  { id: 'bo-jackson',          label: 'Bo Jackson',          img: 'bojackson.jpg' },
+  { id: 'bo-jackson',          label: 'Bo Jackson',          img: 'bo-jackson.jpg' },
   { id: 'mean-joe-greene',     label: 'Mean Joe Greene',     img: 'mean-joe-greene.jpg' },
   { id: 'construction-worker', label: 'Construction Worker', img: 'construction-worker.jpg' },
   { id: 'machu-picchu',        label: 'Machu Picchu',        img: 'machu-picchu.jpg' },
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
-let myConnections = {};  // { canId: clueId } — this player's connections
+let myConnections = {};
 let revealed = false;
 let dragging = null;
-let pollInterval = null;
 let playerId = getOrCreatePlayerId();
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
@@ -89,11 +88,10 @@ function makeCard(item, type) {
   return card;
 }
 
-// ── Geometry ───────────────────────────────────────────────────────────────
+// ── Geometry — SVG is fixed over full viewport ─────────────────────────────
 function dotCenter(dotEl) {
-  const r  = dotEl.getBoundingClientRect();
-  const sr = svg.getBoundingClientRect();
-  return { x: r.left + r.width / 2 - sr.left, y: r.top + r.height / 2 - sr.top };
+  const r = dotEl.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
 function getDot(type, id) {
@@ -138,7 +136,7 @@ function getEventXY(e) {
 function startDrag(e, dot) {
   if (revealed) return;
   e.preventDefault();
-  const c  = dotCenter(dot);
+  const c = dotCenter(dot);
   dragging = { type: dot.dataset.type, id: dot.dataset.id };
   dragLine.setAttribute('x1', c.x); dragLine.setAttribute('y1', c.y);
   dragLine.setAttribute('x2', c.x); dragLine.setAttribute('y2', c.y);
@@ -149,19 +147,18 @@ function moveDrag(e) {
   if (!dragging) return;
   e.preventDefault();
   const { x, y } = getEventXY(e);
-  const sr = svg.getBoundingClientRect();
-  dragLine.setAttribute('x2', x - sr.left);
-  dragLine.setAttribute('y2', y - sr.top);
+  dragLine.setAttribute('x2', x);
+  dragLine.setAttribute('y2', y);
 }
 
 function endDrag(e) {
   if (!dragging) return;
   dragLine.style.display = 'none';
-  const coords = e.changedTouches
+  const { x, y } = e.changedTouches
     ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
     : { x: e.clientX, y: e.clientY };
   const targetType = dragging.type === 'can' ? 'clue' : 'can';
-  const targetDot  = findDotAtPoint(coords.x, coords.y, targetType);
+  const targetDot  = findDotAtPoint(x, y, targetType);
   if (targetDot) {
     const canId  = dragging.type === 'can'  ? dragging.id : targetDot.dataset.id;
     const clueId = dragging.type === 'clue' ? dragging.id : targetDot.dataset.id;
@@ -231,10 +228,17 @@ function wireEvents() {
   window.addEventListener('resize', redrawAllLines);
   revOverlay.addEventListener('click', () => revOverlay.classList.remove('show'));
   window.addEventListener('beforeunload', () => postState('leave'));
+
+  // Reveal button on main page
+  document.getElementById('reveal-btn-game')?.addEventListener('click', async () => {
+    if (!confirm('Reveal answers to all players?')) return;
+    await postState('reveal');
+    triggerReveal();
+  });
 }
 
 buildColumns();
 wireEvents();
 postState('join');
 poll();
-pollInterval = setInterval(poll, 2000);
+setInterval(poll, 2000);
