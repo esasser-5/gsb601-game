@@ -322,19 +322,22 @@ body.admin-page {
 
 /* ── Mobile landscape (phones) ── */
 @media (orientation: landscape) and (max-height: 500px) {
+  html, body { overflow: auto; }
+
   #header { height: 40px; }
   #header h1 { font-size: .8rem; }
   #countdown { font-size: .9rem; }
   #player-count { font-size: .7rem; }
 
-  #game { top: 40px; bottom: 0; }
-
-  .card {
-    max-width: 120px;
+  #game {
+    position: relative;
+    top: 40px;
+    height: auto;
+    min-height: calc(100vh - 40px);
   }
 
+  .card { max-width: 120px; }
   .card img { height: 60px; }
-
   .card-label { font-size: .5rem; padding: 2px 4px 3px; }
 
   .dot { width: 20px; height: 20px; }
