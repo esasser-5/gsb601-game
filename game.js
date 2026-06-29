@@ -81,11 +81,34 @@ function makeCard(item, type) {
   dot.className = 'dot';
   dot.dataset.id = item.id;
   dot.dataset.type = type;
+  wireDot(dot);
 
   card.appendChild(img);
   card.appendChild(label);
   card.appendChild(dot);
   return card;
+}
+
+function wireDot(dot) {
+  dot.addEventListener('pointerdown', e => {
+    if (revealed) return;
+    e.preventDefault();
+    dot.setPointerCapture(e.pointerId);
+    startDrag(dot);
+  });
+  dot.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    e.preventDefault();
+    moveDrag(e.clientX, e.clientY);
+  });
+  dot.addEventListener('pointerup', e => {
+    if (!dragging) return;
+    endDrag(e.clientX, e.clientY);
+  });
+  dot.addEventListener('pointercancel', () => {
+    dragging = null;
+    dragLine.style.display = 'none';
+  });
 }
 
 // ── Geometry — SVG is fixed over full viewport ─────────────────────────────
@@ -128,35 +151,26 @@ function redrawAllLines() {
 }
 
 // ── Drag ───────────────────────────────────────────────────────────────────
-function getEventXY(e) {
-  return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-                   : { x: e.clientX, y: e.clientY };
-}
-
-function startDrag(e, dot) {
-  if (revealed) return;
-  e.preventDefault();
+function startDrag(dot) {
   const c = dotCenter(dot);
   dragging = { type: dot.dataset.type, id: dot.dataset.id };
   dragLine.setAttribute('x1', c.x); dragLine.setAttribute('y1', c.y);
   dragLine.setAttribute('x2', c.x); dragLine.setAttribute('y2', c.y);
+  // Inline stroke so it works regardless of CSS loading
+  dragLine.setAttribute('stroke', '#e8a020');
+  dragLine.setAttribute('stroke-width', '3');
+  dragLine.setAttribute('stroke-dasharray', '8 5');
+  dragLine.setAttribute('opacity', '0.85');
   dragLine.style.display = 'block';
 }
 
-function moveDrag(e) {
-  if (!dragging) return;
-  e.preventDefault();
-  const { x, y } = getEventXY(e);
+function moveDrag(x, y) {
   dragLine.setAttribute('x2', x);
   dragLine.setAttribute('y2', y);
 }
 
-function endDrag(e) {
-  if (!dragging) return;
+function endDrag(x, y) {
   dragLine.style.display = 'none';
-  const { x, y } = e.changedTouches
-    ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
-    : { x: e.clientX, y: e.clientY };
   const targetType = dragging.type === 'can' ? 'clue' : 'can';
   const targetDot  = findDotAtPoint(x, y, targetType);
   if (targetDot) {
@@ -219,17 +233,10 @@ async function poll() {
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 function wireEvents() {
-  document.addEventListener('mousedown',  e => { const d = e.target.closest('.dot'); if (d) startDrag(e, d); });
-  document.addEventListener('mousemove',  moveDrag);
-  document.addEventListener('mouseup',    endDrag);
-  document.addEventListener('touchstart', e => { const d = e.target.closest('.dot'); if (d) startDrag(e, d); }, { passive: false });
-  document.addEventListener('touchmove',  moveDrag, { passive: false });
-  document.addEventListener('touchend',   endDrag);
   window.addEventListener('resize', redrawAllLines);
   revOverlay.addEventListener('click', () => revOverlay.classList.remove('show'));
   window.addEventListener('beforeunload', () => postState('leave'));
 
-  // Reveal button on main page
   document.getElementById('reveal-btn-game')?.addEventListener('click', async () => {
     if (!confirm('Reveal answers to all players?')) return;
     await postState('reveal');

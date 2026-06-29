@@ -86,7 +86,7 @@ html, body {
   align-items: center;
   padding: 8px;
   gap: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 #col-cans { padding-right: 4px; }
@@ -135,8 +135,8 @@ html, body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--amber);
   border: 2px solid var(--charcoal);
@@ -148,8 +148,8 @@ html, body {
 
 .dot:hover { transform: translateY(-50%) scale(1.3); background: #ffb83f; }
 
-#col-cans .dot  { right: -10px; }
-#col-clues .dot { left: -10px; }
+#col-cans .dot  { right: -13px; }
+#col-clues .dot { left: -13px; }
 
 /* ── Lines ── */
 .conn-line {
