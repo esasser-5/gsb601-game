@@ -8,6 +8,7 @@ Place the following files in this directory:
 - `gatorade.jpg`
 - `coca-cola.jpg`
 - `diet-coke.jpg`
+- `inca-kold.jpg`
 
 ## Clue column (right side)
 - `clydesdales.jpg`
@@ -15,3 +16,4 @@ Place the following files in this directory:
 - `bo-jackson.jpg`
 - `mean-joe-greene.jpg`
 - `construction-worker.jpg`
+- `machu-picchu.jpg`

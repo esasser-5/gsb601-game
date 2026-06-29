@@ -28,7 +28,8 @@ const CORRECT_PAIRS = {
   'pepsi':      'michael-jackson',
   'gatorade':   'bo-jackson',
   'coca-cola':  'mean-joe-greene',
-  'diet-coke':  'construction-worker'
+  'diet-coke':  'construction-worker',
+  'inca-kold':  'machu-picchu'
 };
 
 const CANS = [
@@ -37,6 +38,7 @@ const CANS = [
   { id: 'gatorade',   label: 'Gatorade',   img: 'public/images/gatorade.jpg' },
   { id: 'coca-cola',  label: 'Coca-Cola',  img: 'public/images/coca-cola.jpg' },
   { id: 'diet-coke',  label: 'Diet Coke',  img: 'public/images/diet-coke.jpg' },
+  { id: 'inca-kold',  label: 'Inca Kold',  img: 'public/images/inca-kold.jpg' },
 ];
 
 const CLUES = [
@@ -45,6 +47,7 @@ const CLUES = [
   { id: 'bo-jackson',         label: 'Bo Jackson',         img: 'public/images/bo-jackson.jpg' },
   { id: 'mean-joe-greene',    label: 'Mean Joe Greene',    img: 'public/images/mean-joe-greene.jpg' },
   { id: 'construction-worker',label: 'Construction Worker',img: 'public/images/construction-worker.jpg' },
+  { id: 'machu-picchu',       label: 'Machu Picchu',       img: 'public/images/machu-picchu.jpg' },
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
