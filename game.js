@@ -26,14 +26,22 @@ const CLUES = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
-let myConnections = {};
+let myConnections = {};  // { canId: clueId }
 let revealed = false;
-let dragging = null;
+let dragging = null;     // { fromDot, startX, startY, currentX, currentY }
 let playerId = getOrCreatePlayerId();
 
+// ── Canvas setup ───────────────────────────────────────────────────────────
+const canvas = document.getElementById('line-canvas');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  redrawAll();
+}
+
 // ── DOM refs ───────────────────────────────────────────────────────────────
-const svg        = document.getElementById('line-svg');
-const dragLine   = document.getElementById('drag-line');
 const colCans    = document.getElementById('col-cans');
 const colClues   = document.getElementById('col-clues');
 const pcEl       = document.getElementById('player-count');
@@ -56,6 +64,15 @@ function shuffle(arr) {
   return a;
 }
 
+function dotCenter(dotEl) {
+  const r = dotEl.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function getDot(type, id) {
+  return document.querySelector(`.dot[data-type="${type}"][data-id="${id}"]`);
+}
+
 // ── Build UI ───────────────────────────────────────────────────────────────
 function buildColumns() {
   shuffle(CLUES).forEach(clue => colClues.appendChild(makeCard(clue, 'clue')));
@@ -65,8 +82,6 @@ function buildColumns() {
 function makeCard(item, type) {
   const card = document.createElement('div');
   card.className = 'card';
-  card.dataset.id = item.id;
-  card.dataset.type = type;
 
   const img = document.createElement('img');
   img.src = item.img;
@@ -81,7 +96,6 @@ function makeCard(item, type) {
   dot.className = 'dot';
   dot.dataset.id = item.id;
   dot.dataset.type = type;
-  wireDot(dot);
 
   card.appendChild(img);
   card.appendChild(label);
@@ -89,128 +103,124 @@ function makeCard(item, type) {
   return card;
 }
 
+// ── Canvas drawing ─────────────────────────────────────────────────────────
+function drawLine(x1, y1, x2, y2, color, dashed) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.setLineDash(dashed ? [10, 6] : []);
+  ctx.globalAlpha = dashed ? 0.75 : 1;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.setLineDash([]);
+}
+
+function redrawAll() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw confirmed connections
+  Object.entries(myConnections).forEach(([canId, clueId]) => {
+    const canDot  = getDot('can', canId);
+    const clueDot = getDot('clue', clueId);
+    if (!canDot || !clueDot) return;
+    const a = dotCenter(canDot), b = dotCenter(clueDot);
+    let color = '#e8a020';
+    if (revealed) color = CORRECT_PAIRS[canId] === clueId ? '#22c55e' : '#ef4444';
+    drawLine(a.x, a.y, b.x, b.y, color, false);
+  });
+
+  // Draw active drag line
+  if (dragging) {
+    drawLine(dragging.startX, dragging.startY, dragging.currentX, dragging.currentY, '#e8a020', true);
+  }
+}
+
+// ── Drag (Pointer Events) ──────────────────────────────────────────────────
 function wireDot(dot) {
   dot.addEventListener('pointerdown', e => {
     if (revealed) return;
     e.preventDefault();
     dot.setPointerCapture(e.pointerId);
-    startDrag(dot);
+    const c = dotCenter(dot);
+    dragging = {
+      dot,
+      type:     dot.dataset.type,
+      id:       dot.dataset.id,
+      startX:   c.x,
+      startY:   c.y,
+      currentX: c.x,
+      currentY: c.y,
+    };
+    redrawAll();
   });
+
   dot.addEventListener('pointermove', e => {
-    if (!dragging) return;
+    if (!dragging || dragging.dot !== dot) return;
     e.preventDefault();
-    moveDrag(e.clientX, e.clientY);
+    dragging.currentX = e.clientX;
+    dragging.currentY = e.clientY;
+    redrawAll();
   });
+
   dot.addEventListener('pointerup', e => {
-    if (!dragging) return;
-    endDrag(e.clientX, e.clientY);
+    if (!dragging || dragging.dot !== dot) return;
+    const fromDragging = dragging;
+    dragging = null;
+
+    // Find target dot
+    const targetType = fromDragging.type === 'can' ? 'clue' : 'can';
+    const target = findDotAtPoint(e.clientX, e.clientY, targetType);
+    if (target) {
+      const canId  = fromDragging.type === 'can'  ? fromDragging.id : target.dataset.id;
+      const clueId = fromDragging.type === 'clue' ? fromDragging.id : target.dataset.id;
+      saveConnection(canId, clueId);
+    } else {
+      redrawAll();
+    }
   });
+
   dot.addEventListener('pointercancel', () => {
     dragging = null;
-    dragLine.style.display = 'none';
+    redrawAll();
   });
-}
-
-// ── Geometry — SVG is fixed over full viewport ─────────────────────────────
-function dotCenter(dotEl) {
-  const r = dotEl.getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-}
-
-function getDot(type, id) {
-  return document.querySelector(`.dot[data-type="${type}"][data-id="${id}"]`);
-}
-
-// ── SVG lines ──────────────────────────────────────────────────────────────
-function lineId(canId) { return `line-${canId}`; }
-
-function upsertLine(canId, clueId, cls = '') {
-  let line = document.getElementById(lineId(canId));
-  if (!line) {
-    line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.id = lineId(canId);
-    line.classList.add('conn-line');
-    svg.appendChild(line);
-  }
-  line.className.baseVal = 'conn-line' + (cls ? ' ' + cls : '');
-  const canDot  = getDot('can', canId);
-  const clueDot = getDot('clue', clueId);
-  if (!canDot || !clueDot) return;
-  const a = dotCenter(canDot), b = dotCenter(clueDot);
-  line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
-  line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
-}
-
-function removeLine(canId) { document.getElementById(lineId(canId))?.remove(); }
-
-function redrawAllLines() {
-  Object.entries(myConnections).forEach(([canId, clueId]) => {
-    const cls = revealed ? (CORRECT_PAIRS[canId] === clueId ? 'correct' : 'incorrect') : '';
-    upsertLine(canId, clueId, cls);
-  });
-}
-
-// ── Drag ───────────────────────────────────────────────────────────────────
-function startDrag(dot) {
-  const c = dotCenter(dot);
-  dragging = { type: dot.dataset.type, id: dot.dataset.id };
-  dragLine.setAttribute('x1', c.x); dragLine.setAttribute('y1', c.y);
-  dragLine.setAttribute('x2', c.x); dragLine.setAttribute('y2', c.y);
-  // Inline stroke so it works regardless of CSS loading
-  dragLine.setAttribute('stroke', '#e8a020');
-  dragLine.setAttribute('stroke-width', '3');
-  dragLine.setAttribute('stroke-dasharray', '8 5');
-  dragLine.setAttribute('opacity', '0.85');
-  dragLine.style.display = 'block';
-}
-
-function moveDrag(x, y) {
-  dragLine.setAttribute('x2', x);
-  dragLine.setAttribute('y2', y);
-}
-
-function endDrag(x, y) {
-  dragLine.style.display = 'none';
-  const targetType = dragging.type === 'can' ? 'clue' : 'can';
-  const targetDot  = findDotAtPoint(x, y, targetType);
-  if (targetDot) {
-    const canId  = dragging.type === 'can'  ? dragging.id : targetDot.dataset.id;
-    const clueId = dragging.type === 'clue' ? dragging.id : targetDot.dataset.id;
-    saveConnection(canId, clueId);
-  }
-  dragging = null;
 }
 
 function findDotAtPoint(x, y, type) {
+  const HIT = 32; // generous hit area in px
   for (const dot of document.querySelectorAll(`.dot[data-type="${type}"]`)) {
     const r = dot.getBoundingClientRect();
-    if (x >= r.left - 30 && x <= r.right + 30 && y >= r.top - 30 && y <= r.bottom + 30) return dot;
+    const cx = r.left + r.width  / 2;
+    const cy = r.top  + r.height / 2;
+    if (Math.abs(x - cx) <= HIT && Math.abs(y - cy) <= HIT) return dot;
   }
   return null;
 }
 
 // ── Connections ────────────────────────────────────────────────────────────
 function saveConnection(canId, clueId) {
-  if (myConnections[canId]) removeLine(canId);
+  // Remove any existing can→? or ?→clue connections
   for (const [cid, lid] of Object.entries(myConnections)) {
-    if (lid === clueId && cid !== canId) { removeLine(cid); delete myConnections[cid]; }
+    if (cid === canId || lid === clueId) delete myConnections[cid];
   }
   myConnections[canId] = clueId;
-  upsertLine(canId, clueId);
+  redrawAll();
   postState('connect', { canId, clueId });
 }
 
 // ── Reveal ─────────────────────────────────────────────────────────────────
 function triggerReveal() {
   revealed = true;
-  redrawAllLines();
+  redrawAll();
   const total   = Object.keys(CORRECT_PAIRS).length;
   const correct = Object.entries(myConnections).filter(([c, l]) => CORRECT_PAIRS[c] === l).length;
   scoreText.textContent = `${correct} / ${total} correct`;
   revOverlay.classList.add('show');
 }
 
-// ── API calls ──────────────────────────────────────────────────────────────
+// ── API ────────────────────────────────────────────────────────────────────
 async function postState(action, extra = {}) {
   try {
     await fetch('/api/state', {
@@ -232,12 +242,12 @@ async function poll() {
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-function wireEvents() {
-  window.addEventListener('resize', redrawAllLines);
+function wireGlobalEvents() {
+  window.addEventListener('resize', resizeCanvas);
   revOverlay.addEventListener('click', () => revOverlay.classList.remove('show'));
   window.addEventListener('beforeunload', () => postState('leave'));
 
-  document.getElementById('reveal-btn-game')?.addEventListener('click', async () => {
+  document.getElementById('reveal-btn-game').addEventListener('click', async () => {
     if (!confirm('Reveal answers to all players?')) return;
     await postState('reveal');
     triggerReveal();
@@ -245,7 +255,10 @@ function wireEvents() {
 }
 
 buildColumns();
-wireEvents();
+// Wire dots after they're in the DOM
+document.querySelectorAll('.dot').forEach(wireDot);
+resizeCanvas();
+wireGlobalEvents();
 postState('join');
 poll();
 setInterval(poll, 2000);

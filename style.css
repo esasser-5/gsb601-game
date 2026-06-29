@@ -69,8 +69,8 @@ html, body {
   align-items: stretch;
 }
 
-/* SVG overlay — fixed over full viewport so coordinates = clientX/Y */
-#line-svg {
+/* Canvas overlay — fixed over full viewport, pointer-events:none so clicks pass through */
+#line-canvas {
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -142,6 +142,7 @@ html, body {
   border: 2px solid var(--charcoal);
   cursor: crosshair;
   pointer-events: all;
+  touch-action: none;
   z-index: 20;
   transition: transform .1s, background .1s;
 }
@@ -151,27 +152,6 @@ html, body {
 #col-cans .dot  { right: -13px; }
 #col-clues .dot { left: -13px; }
 
-/* ── Lines ── */
-.conn-line {
-  stroke: var(--amber);
-  stroke-width: 3;
-  stroke-linecap: round;
-  fill: none;
-  opacity: .85;
-  transition: stroke .4s, opacity .4s;
-}
-
-.conn-line.correct   { stroke: var(--green); opacity: 1; }
-.conn-line.incorrect { stroke: var(--red);   opacity: .6; }
-
-#drag-line {
-  stroke: var(--amber);
-  stroke-width: 3;
-  stroke-dasharray: 8 5;
-  stroke-linecap: round;
-  fill: none;
-  opacity: .7;
-}
 
 /* ── Reveal button (game page) ── */
 #reveal-btn-game {
