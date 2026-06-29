@@ -8,7 +8,7 @@ Place the following files in this directory:
 - `gatorade.jpg`
 - `coca-cola.jpg`
 - `diet-coke.jpg`
-- `inca-kold.jpg`
+- `inca-kola.jpg`
 
 ## Clue column (right side)
 - `clydesdales.jpg`

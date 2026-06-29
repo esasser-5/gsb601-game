@@ -29,7 +29,7 @@ const CORRECT_PAIRS = {
   'gatorade':   'bo-jackson',
   'coca-cola':  'mean-joe-greene',
   'diet-coke':  'construction-worker',
-  'inca-kold':  'machu-picchu'
+  'inca-kola':  'machu-picchu'
 };
 
 const CANS = [
@@ -38,7 +38,7 @@ const CANS = [
   { id: 'gatorade',   label: 'Gatorade',   img: 'public/images/gatorade.jpg' },
   { id: 'coca-cola',  label: 'Coca-Cola',  img: 'public/images/coca-cola.jpg' },
   { id: 'diet-coke',  label: 'Diet Coke',  img: 'public/images/diet-coke.jpg' },
-  { id: 'inca-kold',  label: 'Inca Kold',  img: 'public/images/inca-kold.jpg' },
+  { id: 'inca-kola',  label: 'Inca Kola',  img: 'public/images/inca-kola.jpg' },
 ];
 
 const CLUES = [
