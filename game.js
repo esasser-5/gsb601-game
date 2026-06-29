@@ -269,7 +269,8 @@ function advanceReveal() {
 
 // ── Timer ──────────────────────────────────────────────────────────────────
 function startTimerDisplay(serverTimerStart) {
-  if (timerRafId !== null) return; // already running
+  if (timerStart === serverTimerStart) return; // already running this timer
+  if (timerRafId !== null) { cancelAnimationFrame(timerRafId); timerRafId = null; }
   timerStart = serverTimerStart;
 
   function tick() {
@@ -305,7 +306,14 @@ async function poll() {
     allConnections = data.connections ?? {};
     if (data.revealed && revealPhase === 0) triggerReveal();
     if (data.correct && revealPhase === 1) advanceReveal();
-    if (data.timerStart && timerRafId === null) startTimerDisplay(data.timerStart);
+    if (data.timerPaused !== null && timerStart === null) {
+      // Timer is paused — show frozen time
+      if (timerRafId !== null) { cancelAnimationFrame(timerRafId); timerRafId = null; }
+      timerStart = null;
+      countdownEl.textContent = formatTime(data.timerPaused);
+    } else if (data.timerStart) {
+      startTimerDisplay(data.timerStart);
+    }
     if (revealPhase > 0) redrawAll();
   } catch (_) {}
 }

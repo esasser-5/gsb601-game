@@ -236,6 +236,13 @@ body.admin-page {
   min-height: 3.5rem;
 }
 
+#timer-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
 #timer-btn {
   padding: 12px 32px;
   font-size: .9rem;
@@ -251,6 +258,21 @@ body.admin-page {
 }
 #timer-btn:hover    { background: var(--amber); color: var(--charcoal); }
 #timer-btn:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
+
+#timer-pause-btn, #timer-reset-btn {
+  padding: 12px 20px;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--warm-gray);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+#timer-pause-btn:hover, #timer-reset-btn:hover { border-color: var(--amber); color: var(--amber); }
 
 #reveal-btn {
   margin-top: 16px;

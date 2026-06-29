@@ -18,11 +18,12 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method === 'GET') {
-    const [revealed, playerCount, connections, timerStart, correct] = await Promise.all([
+    const [revealed, playerCount, connections, timerStart, timerPaused, correct] = await Promise.all([
       redis('GET', `${SESSION}:revealed`),
       redis('SCARD', `${SESSION}:players`),
       redis('HGETALL', `${SESSION}:connections`),
       redis('GET', `${SESSION}:timer`),
+      redis('GET', `${SESSION}:timer-paused`),
       redis('GET', `${SESSION}:correct`)
     ]);
 
@@ -39,6 +40,7 @@ module.exports = async function handler(req, res) {
       playerCount: playerCount ?? 0,
       connections: connObj,
       timerStart: timerStart ? Number(timerStart) : null,
+      timerPaused: timerPaused ? Number(timerPaused) : null,
       correct: !!correct
     });
   }
@@ -63,6 +65,32 @@ module.exports = async function handler(req, res) {
     if (action === 'timer') {
       await redis('SET', `${SESSION}:timer`, Date.now().toString());
       await redis('EXPIRE', `${SESSION}:timer`, '300');
+      await redis('DEL', `${SESSION}:timer-paused`);
+      return res.status(200).json({ ok: true });
+    }
+    if (action === 'timer-pause') {
+      const start = await redis('GET', `${SESSION}:timer`);
+      if (start) {
+        const remaining = Math.max(0, 60000 - (Date.now() - Number(start)));
+        await redis('SET', `${SESSION}:timer-paused`, remaining.toString());
+        await redis('EXPIRE', `${SESSION}:timer-paused`, '3600');
+        await redis('DEL', `${SESSION}:timer`);
+      }
+      return res.status(200).json({ ok: true });
+    }
+    if (action === 'timer-resume') {
+      const paused = await redis('GET', `${SESSION}:timer-paused`);
+      if (paused) {
+        const newStart = Date.now() - (60000 - Number(paused));
+        await redis('SET', `${SESSION}:timer`, newStart.toString());
+        await redis('EXPIRE', `${SESSION}:timer`, '300');
+        await redis('DEL', `${SESSION}:timer-paused`);
+      }
+      return res.status(200).json({ ok: true });
+    }
+    if (action === 'timer-reset') {
+      await redis('DEL', `${SESSION}:timer`);
+      await redis('DEL', `${SESSION}:timer-paused`);
       return res.status(200).json({ ok: true });
     }
     if (action === 'correct') {
@@ -81,6 +109,7 @@ module.exports = async function handler(req, res) {
         redis('DEL', `${SESSION}:connections`),
         redis('DEL', `${SESSION}:players`),
         redis('DEL', `${SESSION}:timer`),
+        redis('DEL', `${SESSION}:timer-paused`),
         redis('DEL', `${SESSION}:correct`)
       ]);
       return res.status(200).json({ ok: true });
