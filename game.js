@@ -304,6 +304,7 @@ async function poll() {
     pcEl.textContent = `${data.playerCount} player${data.playerCount !== 1 ? 's' : ''} connected`;
     allConnections = data.connections ?? {};
     if (data.revealed && revealPhase === 0) triggerReveal();
+    if (data.correct && revealPhase === 1) advanceReveal();
     if (data.timerStart && timerRafId === null) startTimerDisplay(data.timerStart);
     if (revealPhase > 0) redrawAll();
   } catch (_) {}

@@ -1,4 +1,5 @@
 const revealBtn    = document.getElementById('reveal-btn');
+const correctBtn   = document.getElementById('correct-btn');
 const resetBtn     = document.getElementById('reset-btn');
 const timerBtn     = document.getElementById('timer-btn');
 const pcEl         = document.getElementById('admin-player-count');
@@ -48,6 +49,7 @@ async function poll() {
     if (data.revealed) {
       revealBtn.disabled = true;
       revealBtn.textContent = 'Answers Revealed';
+      correctBtn.style.display = '';
       statusEl.textContent  = 'Reveal sent to all players.';
     }
     if (data.timerStart && timerRafId === null) {
@@ -68,6 +70,13 @@ timerBtn.addEventListener('click', async () => {
   }
 });
 
+correctBtn.addEventListener('click', async () => {
+  correctBtn.disabled = true;
+  correctBtn.textContent = 'Correct Answers Shown';
+  await post('correct');
+  statusEl.textContent = 'Correct answers shown to all players.';
+});
+
 revealBtn.addEventListener('click', async () => {
   revealBtn.disabled = true;
   statusEl.textContent = 'Sending…';
@@ -81,6 +90,9 @@ resetBtn.addEventListener('click', async () => {
   await post('reset');
   revealBtn.disabled = false;
   revealBtn.textContent = 'Reveal Answers';
+  correctBtn.style.display = 'none';
+  correctBtn.disabled = false;
+  correctBtn.textContent = 'Show Correct Answers';
   timerBtn.disabled = false;
   countdownEl.textContent = '';
   if (timerRafId !== null) { cancelAnimationFrame(timerRafId); timerRafId = null; }

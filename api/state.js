@@ -18,11 +18,12 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method === 'GET') {
-    const [revealed, playerCount, connections, timerStart] = await Promise.all([
+    const [revealed, playerCount, connections, timerStart, correct] = await Promise.all([
       redis('GET', `${SESSION}:revealed`),
       redis('SCARD', `${SESSION}:players`),
       redis('HGETALL', `${SESSION}:connections`),
-      redis('GET', `${SESSION}:timer`)
+      redis('GET', `${SESSION}:timer`),
+      redis('GET', `${SESSION}:correct`)
     ]);
 
     // HGETALL via REST returns an array [field, val, field, val, ...]
@@ -37,7 +38,8 @@ module.exports = async function handler(req, res) {
       revealed: !!revealed,
       playerCount: playerCount ?? 0,
       connections: connObj,
-      timerStart: timerStart ? Number(timerStart) : null
+      timerStart: timerStart ? Number(timerStart) : null,
+      correct: !!correct
     });
   }
 
@@ -63,6 +65,11 @@ module.exports = async function handler(req, res) {
       await redis('EXPIRE', `${SESSION}:timer`, '300');
       return res.status(200).json({ ok: true });
     }
+    if (action === 'correct') {
+      await redis('SET', `${SESSION}:correct`, '1');
+      await redis('EXPIRE', `${SESSION}:correct`, '7200');
+      return res.status(200).json({ ok: true });
+    }
     if (action === 'reveal') {
       await redis('SET', `${SESSION}:revealed`, '1');
       await redis('EXPIRE', `${SESSION}:revealed`, '7200');
@@ -73,7 +80,8 @@ module.exports = async function handler(req, res) {
         redis('DEL', `${SESSION}:revealed`),
         redis('DEL', `${SESSION}:connections`),
         redis('DEL', `${SESSION}:players`),
-        redis('DEL', `${SESSION}:timer`)
+        redis('DEL', `${SESSION}:timer`),
+        redis('DEL', `${SESSION}:correct`)
       ]);
       return res.status(200).json({ ok: true });
     }

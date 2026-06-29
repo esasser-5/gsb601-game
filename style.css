@@ -293,7 +293,7 @@ body.admin-page {
   opacity: .5;
 }
 
-/* ── Mobile / portrait ── */
+/* ── Mobile portrait ── */
 @media (max-width: 600px), (orientation: portrait) and (max-width: 900px) {
   html, body { overflow: auto; }
 
@@ -313,14 +313,33 @@ body.admin-page {
     gap: 10px;
   }
 
-  .card {
-    max-width: 140px;
-  }
-
+  .card { max-width: 140px; }
   .card img { height: 80px; }
 
   #col-cans .dot  { right: -10px; top: 50%; }
   #col-clues .dot { left: -10px; top: 50%; }
+}
 
-  #line-svg { position: fixed; }
+/* ── Mobile landscape (phones) ── */
+@media (orientation: landscape) and (max-height: 500px) {
+  #header { height: 40px; }
+  #header h1 { font-size: .8rem; }
+  #countdown { font-size: .9rem; }
+  #player-count { font-size: .7rem; }
+
+  #game { top: 40px; bottom: 0; }
+
+  .card {
+    max-width: 120px;
+  }
+
+  .card img { height: 60px; }
+
+  .card-label { font-size: .5rem; padding: 2px 4px 3px; }
+
+  .dot { width: 20px; height: 20px; }
+  #col-cans .dot  { right: -11px; }
+  #col-clues .dot { left: -11px; }
+
+  #reveal-banner { font-size: .75rem; padding: 9px 20px; bottom: 12px; }
 }
