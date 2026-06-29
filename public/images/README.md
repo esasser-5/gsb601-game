@@ -13,7 +13,7 @@ Place the following files in this directory:
 ## Clue column (right side)
 - `clydesdales.jpg`
 - `michael-jackson.jpg`
-- `bo-jackson.jpg`
+- `bojackson.jpg`
 - `mean-joe-greene.jpg`
 - `construction-worker.jpg`
 - `machu-picchu.jpg`

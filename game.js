@@ -44,7 +44,7 @@ const CANS = [
 const CLUES = [
   { id: 'clydesdales',        label: 'Clydesdales',        img: 'public/images/clydesdales.jpg' },
   { id: 'michael-jackson',    label: 'Michael Jackson',    img: 'public/images/michael-jackson.jpg' },
-  { id: 'bo-jackson',         label: 'Bo Jackson',         img: 'public/images/bo-jackson.jpg' },
+  { id: 'bo-jackson',         label: 'Bo Jackson',         img: 'public/images/bojackson.jpg' },
   { id: 'mean-joe-greene',    label: 'Mean Joe Greene',    img: 'public/images/mean-joe-greene.jpg' },
   { id: 'construction-worker',label: 'Construction Worker',img: 'public/images/construction-worker.jpg' },
   { id: 'machu-picchu',       label: 'Machu Picchu',       img: 'public/images/machu-picchu.jpg' },
