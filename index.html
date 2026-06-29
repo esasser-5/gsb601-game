@@ -10,7 +10,10 @@
 
   <div id="header">
     <h1>Match the Ad</h1>
-    <div id="player-count">Connecting…</div>
+    <div id="header-right">
+      <div id="countdown"></div>
+      <div id="player-count">Connecting…</div>
+    </div>
   </div>
 
   <canvas id="line-canvas"></canvas>
@@ -20,15 +23,7 @@
     <div id="col-clues" class="column"></div>
   </div>
 
-  <button id="reveal-btn-game">Reveal Answers</button>
-
-  <div id="reveal-overlay">
-    <div id="reveal-box">
-      <h2>Answers Revealed</h2>
-      <div id="score-text"></div>
-      <p>Tap anywhere to close</p>
-    </div>
-  </div>
+  <button id="reveal-banner"></button>
 
   <script src="game.js"></script>
 </body>

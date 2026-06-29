@@ -40,12 +40,28 @@ html, body {
   color: var(--amber);
 }
 
+#header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 #player-count {
   font-size: .8rem;
   font-weight: 600;
   color: var(--warm-gray);
   opacity: .7;
   letter-spacing: .05em;
+}
+
+#countdown {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+  letter-spacing: .05em;
+  min-width: 3ch;
+  text-align: right;
 }
 
 /* ── Banner ── */
@@ -153,70 +169,31 @@ html, body {
 #col-clues .dot { left: -13px; }
 
 
-/* ── Reveal button (game page) ── */
-#reveal-btn-game {
+/* ── Reveal banner (game page, phase 1 → 2) ── */
+#reveal-banner {
+  display: none;
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 50;
-  padding: 10px 22px;
-  font-size: .8rem;
+  padding: 12px 28px;
+  font-size: .9rem;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .07em;
   text-transform: uppercase;
   background: var(--amber);
   color: var(--charcoal);
   border: none;
-  border-radius: 10px;
+  border-radius: 50px;
   cursor: pointer;
-  opacity: .85;
-  transition: opacity .15s, transform .1s;
+  transition: background .15s, transform .1s;
+  white-space: nowrap;
 }
-#reveal-btn-game:hover  { opacity: 1; }
-#reveal-btn-game:active { transform: scale(.97); }
-
-/* ── Reveal overlay ── */
-#reveal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.6);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-}
-
-#reveal-overlay.show { display: flex; }
-
-#reveal-box {
-  background: var(--card-bg);
-  border: 3px solid var(--amber);
-  border-radius: 16px;
-  padding: 32px 40px;
-  text-align: center;
-  max-width: 340px;
-}
-
-#reveal-box h2 {
-  font-size: 1.4rem;
-  color: var(--amber);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-}
-
-#score-text {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--warm-gray);
-  margin-bottom: 8px;
-}
-
-#reveal-box p {
-  font-size: .85rem;
-  color: var(--warm-gray);
-  opacity: .7;
-}
+#reveal-banner.show        { display: block; }
+#reveal-banner.done        { background: var(--green); cursor: default; }
+#reveal-banner:hover:not(.done) { background: #ffb83f; }
+#reveal-banner:active:not(.done) { transform: translateX(-50%) scale(.97); }
 
 /* ── Admin page ── */
 body.admin-page {
@@ -250,6 +227,30 @@ body.admin-page {
   text-transform: uppercase;
   letter-spacing: .08em;
 }
+
+#admin-countdown {
+  font-size: 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+  min-height: 3.5rem;
+}
+
+#timer-btn {
+  padding: 12px 32px;
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--amber);
+  border: 2px solid var(--amber);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+#timer-btn:hover    { background: var(--amber); color: var(--charcoal); }
+#timer-btn:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
 
 #reveal-btn {
   margin-top: 16px;

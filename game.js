@@ -26,10 +26,13 @@ const CLUES = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
-let myConnections = {};  // { canId: clueId }
-let revealed = false;
-let dragging = null;     // { fromDot, startX, startY, currentX, currentY }
+let myConnections = {};   // { canId: clueId }
+let allConnections = {};  // { 'playerId:canId': clueId } from server
+let revealPhase = 0;      // 0=playing, 1=show all lines, 2=show correct lines
+let dragging = null;
 let playerId = getOrCreatePlayerId();
+let timerRafId = null;
+let timerStart = null;
 
 // ── Canvas setup ───────────────────────────────────────────────────────────
 const canvas = document.getElementById('line-canvas');
@@ -42,11 +45,11 @@ function resizeCanvas() {
 }
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
-const colCans    = document.getElementById('col-cans');
-const colClues   = document.getElementById('col-clues');
-const pcEl       = document.getElementById('player-count');
-const revOverlay = document.getElementById('reveal-overlay');
-const scoreText  = document.getElementById('score-text');
+const colCans      = document.getElementById('col-cans');
+const colClues     = document.getElementById('col-clues');
+const pcEl         = document.getElementById('player-count');
+const countdownEl  = document.getElementById('countdown');
+const revealBanner = document.getElementById('reveal-banner');
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function getOrCreatePlayerId() {
@@ -71,6 +74,11 @@ function dotCenter(dotEl) {
 
 function getDot(type, id) {
   return document.querySelector(`.dot[data-type="${type}"][data-id="${id}"]`);
+}
+
+function formatTime(ms) {
+  const s = Math.ceil(ms / 1000);
+  return `0:${String(s).padStart(2, '0')}`;
 }
 
 // ── Build UI ───────────────────────────────────────────────────────────────
@@ -104,15 +112,15 @@ function makeCard(item, type) {
 }
 
 // ── Canvas drawing ─────────────────────────────────────────────────────────
-function drawLine(x1, y1, x2, y2, color, dashed) {
+function drawLine(x1, y1, x2, y2, color, alpha, width, dashed) {
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = width ?? 3;
   ctx.lineCap = 'round';
   ctx.setLineDash(dashed ? [10, 6] : []);
-  ctx.globalAlpha = dashed ? 0.75 : 1;
+  ctx.globalAlpha = alpha ?? 1;
   ctx.stroke();
   ctx.globalAlpha = 1;
   ctx.setLineDash([]);
@@ -121,27 +129,62 @@ function drawLine(x1, y1, x2, y2, color, dashed) {
 function redrawAll() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw confirmed connections
-  Object.entries(myConnections).forEach(([canId, clueId]) => {
-    const canDot  = getDot('can', canId);
-    const clueDot = getDot('clue', clueId);
-    if (!canDot || !clueDot) return;
-    const a = dotCenter(canDot), b = dotCenter(clueDot);
-    let color = '#e8a020';
-    if (revealed) color = CORRECT_PAIRS[canId] === clueId ? '#22c55e' : '#ef4444';
-    drawLine(a.x, a.y, b.x, b.y, color, false);
-  });
+  if (revealPhase === 0) {
+    // Normal play: draw only my connections in amber
+    Object.entries(myConnections).forEach(([canId, clueId]) => {
+      const a = dotCenter(getDot('can', canId));
+      const b = dotCenter(getDot('clue', clueId));
+      if (a && b) drawLine(a.x, a.y, b.x, b.y, '#e8a020', 1, 3, false);
+    });
 
-  // Draw active drag line
+  } else {
+    // Phase 1 & 2: draw all students' connections overlaid
+
+    // Build aggregate: unique (canId, clueId) pairs with who made them
+    const aggregate = new Map(); // key: 'canId|clueId' → { canId, clueId, mine }
+    Object.entries(allConnections).forEach(([key, clueId]) => {
+      const colon = key.indexOf(':');
+      const pid   = key.slice(0, colon);
+      const canId = key.slice(colon + 1);
+      const pairKey = `${canId}|${clueId}`;
+      if (!aggregate.has(pairKey)) {
+        aggregate.set(pairKey, { canId, clueId, mine: pid === playerId });
+      } else if (pid === playerId) {
+        aggregate.get(pairKey).mine = true;
+      }
+    });
+
+    aggregate.forEach(({ canId, clueId, mine }) => {
+      const canDot  = getDot('can', canId);
+      const clueDot = getDot('clue', clueId);
+      if (!canDot || !clueDot) return;
+      const a = dotCenter(canDot), b = dotCenter(clueDot);
+      const alpha = mine ? 0.7 : 0.35;
+      drawLine(a.x, a.y, b.x, b.y, '#e8a020', alpha, 3, false);
+    });
+
+    if (revealPhase === 2) {
+      // Layer correct pairs in green on top
+      Object.entries(CORRECT_PAIRS).forEach(([canId, clueId]) => {
+        const canDot  = getDot('can', canId);
+        const clueDot = getDot('clue', clueId);
+        if (!canDot || !clueDot) return;
+        const a = dotCenter(canDot), b = dotCenter(clueDot);
+        drawLine(a.x, a.y, b.x, b.y, '#22c55e', 1, 4, false);
+      });
+    }
+  }
+
+  // Active drag line
   if (dragging) {
-    drawLine(dragging.startX, dragging.startY, dragging.currentX, dragging.currentY, '#e8a020', true);
+    drawLine(dragging.startX, dragging.startY, dragging.currentX, dragging.currentY, '#e8a020', 0.75, 3, true);
   }
 }
 
 // ── Drag (Pointer Events) ──────────────────────────────────────────────────
 function wireDot(dot) {
   dot.addEventListener('pointerdown', e => {
-    if (revealed) return;
+    if (revealPhase > 0) return;
     e.preventDefault();
     dot.setPointerCapture(e.pointerId);
     const c = dotCenter(dot);
@@ -170,7 +213,6 @@ function wireDot(dot) {
     const fromDragging = dragging;
     dragging = null;
 
-    // Find target dot
     const targetType = fromDragging.type === 'can' ? 'clue' : 'can';
     const target = findDotAtPoint(e.clientX, e.clientY, targetType);
     if (target) {
@@ -189,7 +231,7 @@ function wireDot(dot) {
 }
 
 function findDotAtPoint(x, y, type) {
-  const HIT = 32; // generous hit area in px
+  const HIT = 32;
   for (const dot of document.querySelectorAll(`.dot[data-type="${type}"]`)) {
     const r = dot.getBoundingClientRect();
     const cx = r.left + r.width  / 2;
@@ -201,7 +243,6 @@ function findDotAtPoint(x, y, type) {
 
 // ── Connections ────────────────────────────────────────────────────────────
 function saveConnection(canId, clueId) {
-  // Remove any existing can→? or ?→clue connections
   for (const [cid, lid] of Object.entries(myConnections)) {
     if (cid === canId || lid === clueId) delete myConnections[cid];
   }
@@ -212,12 +253,36 @@ function saveConnection(canId, clueId) {
 
 // ── Reveal ─────────────────────────────────────────────────────────────────
 function triggerReveal() {
-  revealed = true;
+  revealPhase = 1;
   redrawAll();
-  const total   = Object.keys(CORRECT_PAIRS).length;
-  const correct = Object.entries(myConnections).filter(([c, l]) => CORRECT_PAIRS[c] === l).length;
-  scoreText.textContent = `${correct} / ${total} correct`;
-  revOverlay.classList.add('show');
+  revealBanner.textContent = 'Tap to see correct answers →';
+  revealBanner.classList.add('show');
+  revealBanner.addEventListener('click', advanceReveal, { once: true });
+}
+
+function advanceReveal() {
+  revealPhase = 2;
+  redrawAll();
+  revealBanner.textContent = 'Green = correct answer';
+  revealBanner.classList.add('done');
+}
+
+// ── Timer ──────────────────────────────────────────────────────────────────
+function startTimerDisplay(serverTimerStart) {
+  if (timerRafId !== null) return; // already running
+  timerStart = serverTimerStart;
+
+  function tick() {
+    const remaining = Math.max(0, 60000 - (Date.now() - timerStart));
+    if (remaining > 0) {
+      countdownEl.textContent = formatTime(remaining);
+      timerRafId = requestAnimationFrame(tick);
+    } else {
+      countdownEl.textContent = "Time's up!";
+      timerRafId = null;
+    }
+  }
+  timerRafId = requestAnimationFrame(tick);
 }
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -237,25 +302,20 @@ async function poll() {
     if (!res.ok) return;
     const data = await res.json();
     pcEl.textContent = `${data.playerCount} player${data.playerCount !== 1 ? 's' : ''} connected`;
-    if (data.revealed && !revealed) triggerReveal();
+    allConnections = data.connections ?? {};
+    if (data.revealed && revealPhase === 0) triggerReveal();
+    if (data.timerStart && timerRafId === null) startTimerDisplay(data.timerStart);
+    if (revealPhase > 0) redrawAll();
   } catch (_) {}
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 function wireGlobalEvents() {
   window.addEventListener('resize', resizeCanvas);
-  revOverlay.addEventListener('click', () => revOverlay.classList.remove('show'));
   window.addEventListener('beforeunload', () => postState('leave'));
-
-  document.getElementById('reveal-btn-game').addEventListener('click', async () => {
-    if (!confirm('Reveal answers to all players?')) return;
-    await postState('reveal');
-    triggerReveal();
-  });
 }
 
 buildColumns();
-// Wire dots after they're in the DOM
 document.querySelectorAll('.dot').forEach(wireDot);
 resizeCanvas();
 wireGlobalEvents();
